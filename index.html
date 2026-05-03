@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Start Menu Chaos</title>
+<style>
+*{box-sizing:border-box;user-select:none}
+body{margin:0;height:100vh;overflow:hidden;font-family:Arial,sans-serif;color:white;background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.75)),url('background.png') center/cover no-repeat fixed}
+button{cursor:pointer;font-family:inherit}.hidden{display:none!important}
+#bgGif{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;display:none}
+#bossBg{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;display:none;filter:contrast(1.15) brightness(.95);animation:none}
+.bossAlive{animation:bossPulse .55s infinite alternate ease-in-out}.bossAngry{animation:bossPulse .28s infinite alternate ease-in-out}.bossHitFlash{filter:contrast(1.9) brightness(1.65) hue-rotate(35deg)!important}
+.game-bg-dim{position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.55));z-index:1;pointer-events:none;display:none}
+
+/* ===== CLEAN MAIN MENU ===== */
+#mainMenu{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 20% 20%,rgba(70,170,255,.22),transparent 35%),radial-gradient(circle at 80% 75%,rgba(255,70,70,.16),transparent 34%),linear-gradient(135deg,#05080e,#0d1622)}
+.card{width:min(1180px,94vw);height:min(700px,90vh);display:grid;grid-template-columns:.82fr .95fr 1.05fr;gap:18px;padding:18px;border-radius:28px;background:rgba(10,18,28,.95);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 60px rgba(0,0,0,.65);backdrop-filter:blur(12px);overflow:hidden}
+.hero,.panel{padding:20px;border-radius:20px;border:1px solid rgba(255,255,255,.08);overflow:hidden;box-shadow:none}
+.hero{background:linear-gradient(180deg,rgba(70,160,255,.18),rgba(255,255,255,.04))}
+.panel{background:rgba(0,0,0,.28);display:flex;flex-direction:column;gap:10px}
+.badge{display:inline-block;padding:8px 12px;border-radius:999px;background:rgba(80,180,255,.18);border:1px solid rgba(80,180,255,.35);color:#aee2ff;font-weight:bold}
+.hero h1{font-size:clamp(34px,4vw,56px);line-height:.92;margin:18px 0}.hero span{color:#69c8ff}.hero p{color:rgba(255,255,255,.8);font-size:16px;line-height:1.25}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.feature{text-align:center;padding:12px;border-radius:14px;background:rgba(255,255,255,.06)}.feature b{display:block;font-size:21px}
+.statGrid{display:grid;gap:10px;margin-top:16px}.statItem{padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08)}.statItem span{color:#69c8ff}.statItem b{display:block;font-size:20px;color:#ffd86b;margin-top:2px}
+.menuTitle{font-size:22px;font-weight:900;margin-bottom:8px}
+select{padding:11px;border-radius:12px;font-size:15px;margin-bottom:8px;background:#f7f8fb;border:0;outline:none;color:#111}
+.progressToggle{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;background:rgba(255,255,255,.06);font-size:14px}
+.mainBtn{width:100%;padding:14px 16px;border-radius:15px;border:1px solid rgba(255,255,255,.12);font-size:17px;font-weight:800;color:white;background:linear-gradient(180deg,#2d83d8,#164f87);text-align:left;transition:transform .12s,filter .12s,box-shadow .12s}.mainBtn:hover{transform:scale(1.015);filter:brightness(1.12);box-shadow:0 10px 28px rgba(0,0,0,.28)}.mainBtn small{display:block;opacity:.72;margin-top:3px;font-size:13px}
+#testBossBtn{padding:8px 10px;font-size:14px;opacity:.85}.mainBtn:hover{transform:scale(1.015);filter:brightness(1.12);box-shadow:0 10px 28px rgba(0,0,0,.28)}.mainBtn small{display:block;opacity:.72;margin-top:3px;font-size:13px}.primary{background:linear-gradient(180deg,#46b5ff,#1f69b5);font-size:21px}.danger{background:linear-gradient(180deg,#b84949,#7e2020)}
+#menuInfo,.shopBox{min-height:58px;padding:13px;border-radius:13px;background:rgba(255,255,255,.055);color:rgba(255,255,255,.86)}
+.shopPanel{display:flex;flex-direction:column;min-height:0}.shopTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 12px}.shopTab{padding:9px 6px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:white;font-weight:bold;font-size:13px}.shopTab.active{background:linear-gradient(180deg,#46b5ff,#1f69b5)}
+.shopList{overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:10px;padding-right:4px}.shopItem{display:grid;grid-template-columns:50px 1fr auto;gap:10px;align-items:center;padding:10px;border-radius:14px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08)}.shopPreview{width:50px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:white;color:#111;font-weight:900;box-shadow:0 8px 20px rgba(0,0,0,.35)}.shopMeta b{font-size:15px}.shopMeta small{opacity:.75}.shopBuy{padding:7px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.35);color:white;font-weight:bold}.shopBuy:disabled{opacity:.5;cursor:not-allowed}
+
+/* ===== SKINS ===== */
+.skin-neon{background:linear-gradient(135deg,#00f5ff,#ff00f7)!important;color:white!important;box-shadow:0 0 18px #00f5ff,0 0 32px #ff00f7!important}.skin-fire{background:linear-gradient(135deg,#ffdd55,#ff3b00)!important;color:#1b0800!important;box-shadow:0 0 20px orange,0 0 36px red!important}.skin-toxic{background:linear-gradient(135deg,#b6ff00,#00ff66)!important;color:#061b00!important;box-shadow:0 0 20px #b6ff00,0 0 32px #00ff66!important}.skin-glitch{background:white!important;color:#111!important;box-shadow:4px 0 0 #00f5ff,-4px 0 0 #ff00f7,0 0 22px white!important;animation:glitchSkin .18s infinite alternate}.skin-void{background:linear-gradient(135deg,#050505,#341052)!important;color:white!important;box-shadow:0 0 22px #8a2be2,0 0 38px #000!important}.skin-royal{background:linear-gradient(135deg,#ffe66d,#6d37ff)!important;color:#180b38!important;box-shadow:0 0 20px gold,0 0 32px #6d37ff!important}.skin-candy{background:linear-gradient(135deg,#ff7ad9,#7afcff)!important;color:#2a0020!important;box-shadow:0 0 20px #ff7ad9,0 0 32px #7afcff!important}
+.coin-ruby{filter:drop-shadow(0 0 16px #ff1744) drop-shadow(0 6px 8px #000)!important}.coin-diamond{filter:drop-shadow(0 0 18px #00e5ff) drop-shadow(0 6px 8px #000)!important}.coin-skull{filter:drop-shadow(0 0 18px #fff) drop-shadow(0 0 18px #7b0000) drop-shadow(0 6px 8px #000)!important}.coin-star{filter:drop-shadow(0 0 20px #fff46b) drop-shadow(0 0 30px #ff8a00) drop-shadow(0 6px 8px #000)!important}
+
+/* ===== GAME UI ===== */
+#stats,#timer,#unstuckBtn{position:fixed;top:18px;z-index:1000;font-size:20px;font-weight:bold;font-family:monospace;background:rgba(0,0,0,.62);padding:10px 16px;border-radius:14px;border:1px solid rgba(255,255,255,.12)}#stats{left:18px}#timer{right:18px}#unstuckBtn{top:72px;right:18px;font-size:16px;color:white}#unstuckBtn:hover{filter:brightness(1.25);transform:scale(1.03)}#message{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:1000;font-size:22px;text-align:center;background:rgba(0,0,0,.58);padding:10px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);pointer-events:none}#gameMenu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:340px}#title{font-size:42px;margin-bottom:35px;text-shadow:0 0 14px #000}.gameBtn,.fakeBtn{display:block;width:220px;margin:14px auto;padding:14px 20px;border:0;border-radius:14px;font-size:20px;font-weight:bold;background:white;color:#111;box-shadow:0 8px 20px rgba(0,0,0,.35)}.gameBtn:hover,.fakeBtn:hover{transform:scale(1.04)}#startBtn.moving{position:fixed;margin:0;transform:none!important;z-index:1200;transition:left .14s,top .14s}
+.coin{position:fixed;font-size:54px;cursor:pointer;z-index:1800;filter:drop-shadow(0 0 10px gold) drop-shadow(0 6px 8px #000);animation:coinPulse .75s infinite alternate ease-in-out,coinWiggle 1.1s infinite ease-in-out}.coin:hover{transform:scale(1.25)!important;filter:drop-shadow(0 0 18px #fff36b) drop-shadow(0 8px 10px #000)}
+.screen{position:fixed;inset:0;background:#020202;color:white;z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:24px;padding:30px}.spinner{margin-top:30px;width:60px;height:60px;border:6px solid #444;border-top:6px solid white;border-radius:50%;animation:spin 1s linear infinite}.xp{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);min-width:360px;max-width:90vw;background:#ece9d8;color:#111;border:2px solid #245edb;border-radius:8px;overflow:hidden;z-index:2600;box-shadow:0 18px 55px rgba(0,0,0,.65);font-family:Tahoma,Arial}.xpTitle{background:linear-gradient(#2f7df6,#0b45b7);color:white;padding:8px 12px;font-weight:bold;display:flex;justify-content:space-between}.xpBody{padding:22px}.xp button{width:auto;min-width:92px;margin:8px 4px 0;padding:8px 14px;font-size:14px;border-radius:4px;border:1px solid #777}.fakeBtn{position:fixed;z-index:1700}.xpDesktop{position:fixed;inset:0;z-index:3000;background:linear-gradient(#2f88ff,#1451a4);color:white;font-family:Tahoma,Arial;overflow:hidden}.xpIcon{position:absolute;width:100px;text-align:center;font-size:13px;text-shadow:0 1px 3px black}.xpIcon .ico{font-size:38px;display:block}.xpTaskbar{position:absolute;bottom:0;left:0;right:0;height:44px;background:linear-gradient(#2d7df0,#0d48b7);display:flex;align-items:center}.xpStart{height:36px;margin-left:6px;padding:0 22px;border-radius:999px;background:linear-gradient(#64d763,#188b22);display:flex;align-items:center;font-weight:bold}.xpTray{margin-left:auto;margin-right:12px}.mini{position:fixed;inset:0;background:radial-gradient(circle,#101018,#000);z-index:4000;color:white;overflow:hidden}.hud{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:4003;font-size:22px;text-align:center}.ship{position:fixed;bottom:35px;font-size:42px;z-index:4002}.bullet{position:fixed;width:6px;height:22px;background:white;border-radius:999px;z-index:4002}.enemy{position:fixed;padding:8px 14px;border:2px solid white;border-radius:10px;font-size:20px;font-weight:bold;color:white;background:rgba(255,255,255,.08);z-index:4002}.pulse{animation:pulse .13s infinite linear!important}
+.rewardFlash{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.8);z-index:6000;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:22px 42px;font-size:46px;font-weight:900;font-family:Arial Black,Arial,sans-serif;text-shadow:3px 3px 0 #000,0 0 20px rgba(255,255,255,.65);animation:rewardPop 1s ease-out forwards;pointer-events:none}.rewardPlus{color:#ffd86b;box-shadow:0 0 45px rgba(255,210,70,.25)}.rewardMinus{color:#ff4d4d;box-shadow:0 0 45px rgba(255,0,0,.25)}.coinParticle{position:fixed;left:50%;top:30%;z-index:5999;font-size:30px;pointer-events:none;filter:drop-shadow(0 4px 5px #000);animation:coinBoom .75s ease-out forwards}.flameParticle{position:fixed;z-index:4004;font-size:42px;pointer-events:none;filter:drop-shadow(0 0 12px orange);animation:flameRise 1.2s ease-out forwards}.fallingCoin{position:fixed;z-index:5005;font-size:44px;cursor:pointer;filter:drop-shadow(0 0 12px gold) drop-shadow(0 6px 8px #000);animation:fallCoin 2s linear forwards}.crack{position:fixed;width:220px;height:220px;pointer-events:none;z-index:4500;mix-blend-mode:screen;opacity:.95;animation:crackFade 1.15s ease-out forwards}.crack:before,.crack:after{content:'';position:absolute;left:50%;top:50%;width:5px;height:150px;background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,0,0,.8),transparent);box-shadow:0 0 16px rgba(255,0,0,.95),0 0 8px white;clip-path:polygon(45% 0,60% 0,54% 22%,70% 25%,55% 44%,68% 62%,50% 100%,38% 100%,45% 64%,30% 45%,44% 25%)}.crack:after{transform:rotate(70deg);height:120px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,0,0,.65),transparent)}.bossDamageOverlay{position:fixed;inset:0;z-index:4300;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.14),rgba(255,0,0,.18),transparent 62%);animation:damagePulse .22s ease-out forwards}.rpsBossSkull{position:fixed;left:50%;top:34%;transform:translate(-50%,-50%);z-index:4100;font-size:190px;filter:drop-shadow(0 0 30px red) drop-shadow(0 0 60px orange);animation:skullBurn .45s infinite alternate ease-in-out;pointer-events:none}.rpsChoices{position:fixed;left:50%;bottom:42px;transform:translateX(-50%);z-index:4100;display:grid;grid-template-columns:repeat(4,150px);gap:14px}.rpsBtn{height:74px;border-radius:18px;background:white;color:#111;border:3px solid white;font-weight:900;font-size:17px;box-shadow:0 12px 30px rgba(0,0,0,.45);cursor:pointer}.rpsBtn:hover{transform:translateY(-3px) scale(1.03);filter:brightness(1.08)}.rps-scissor{box-shadow:0 0 18px #69c8ff,0 12px 30px rgba(0,0,0,.45);border-color:#69c8ff}.rps-rock{box-shadow:0 0 18px #ff4d4d,0 12px 30px rgba(0,0,0,.45);border-color:#ff4d4d}.rps-paper{box-shadow:0 0 18px #ffd86b,0 12px 30px rgba(0,0,0,.45);border-color:#ffd86b}.rps-random{box-shadow:0 0 18px #9d69ff,0 12px 30px rgba(0,0,0,.45);border-color:#9d69ff}.rpsCountdown{position:fixed;left:50%;top:54%;transform:translate(-50%,-50%);z-index:4200;background:rgba(0,0,0,.70);border:1px solid rgba(255,255,255,.18);border-radius:24px;padding:22px 42px;font-size:54px;font-weight:900;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.7)}.rpsReveal{position:fixed;left:50%;top:66%;transform:translate(-50%,-50%);z-index:4200;background:rgba(0,0,0,.68);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:16px 26px;font-size:22px;text-align:center;min-width:430px}.rpsHp{letter-spacing:6px;font-size:28px}.rpsHit{color:#ff4d4d;text-shadow:0 0 10px red}.rpsAlive{color:#69ff9a;text-shadow:0 0 10px lime}.jackpotFlash{position:fixed;inset:0;z-index:5000;pointer-events:none;background:radial-gradient(circle,rgba(255,220,0,.28),rgba(255,0,180,.16),rgba(0,255,255,.14),transparent);animation:jackpotPulse .25s infinite alternate}.eye{position:fixed;z-index:2600;font-size:38px;pointer-events:none;filter:drop-shadow(0 0 10px white)}.megaCoin{position:fixed;font-size:64px;z-index:1800;cursor:pointer;filter:drop-shadow(0 0 22px cyan) drop-shadow(0 0 28px gold);animation:coinPulse .35s infinite alternate ease-in-out}.explodingCoin{position:fixed;font-size:52px;z-index:1800;cursor:pointer;filter:drop-shadow(0 0 16px red) drop-shadow(0 6px 8px #000);animation:coinWiggle .28s infinite}.fakeChatLine{margin:6px 0;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.08)}.uiBroken{animation:uiBroken .18s infinite alternate linear}
+@keyframes glitchSkin{0%{transform:translate(-1px,1px)}100%{transform:translate(2px,-1px)}}@keyframes skullBurn{0%{transform:translate(-50%,-50%) scale(1) rotate(-1deg);filter:drop-shadow(0 0 26px red) drop-shadow(0 0 44px orange)}100%{transform:translate(-50%,-50%) scale(1.06) rotate(1deg);filter:drop-shadow(0 0 42px red) drop-shadow(0 0 80px orange)}}@keyframes coinPulse{0%{scale:1}100%{scale:1.18}}@keyframes coinWiggle{0%{rotate:-8deg}50%{rotate:8deg}100%{rotate:-8deg}}@keyframes flameRise{0%{opacity:0;transform:translateY(40px) scale(.6) rotate(-10deg)}20%{opacity:1}100%{opacity:0;transform:translateY(-190px) scale(1.6) rotate(14deg)}}@keyframes fallCoin{0%{transform:translateY(-80px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:.9}}@keyframes jackpotPulse{from{filter:hue-rotate(0deg);opacity:.55}to{filter:hue-rotate(120deg);opacity:.9}}@keyframes crackFade{0%{opacity:0;transform:scale(.45) rotate(-20deg)}20%{opacity:1;transform:scale(1.05) rotate(4deg)}100%{opacity:0;transform:scale(1.65) rotate(25deg)}}@keyframes damagePulse{0%{opacity:0}25%{opacity:1}100%{opacity:0}}@keyframes uiBroken{0%{transform:translate(0,0) rotate(0deg)}100%{transform:translate(6px,-4px) rotate(.6deg)}}@keyframes bossPulse{0%{filter:contrast(1.05) brightness(.85) saturate(1.2)}100%{filter:contrast(1.55) brightness(1.25) saturate(1.9)}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{0%{transform:scale(.35) rotate(-2deg)}50%{transform:scale(.85) rotate(3deg)}100%{transform:scale(.35)}}@keyframes rewardPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.45) rotate(-5deg);filter:blur(3px)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.18) rotate(2deg);filter:blur(0)}100%{opacity:0;transform:translate(-50%,-90%) scale(1) rotate(-2deg)}}@keyframes coinBoom{0%{opacity:1;transform:translate(-50%,-50%) scale(.4) rotate(0deg)}100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1.4) rotate(var(--r))}}
+@media(max-width:900px){#mainMenu{padding:10px}.card{grid-template-columns:1fr;height:96vh;overflow:auto}.features{grid-template-columns:1fr}.shopList{max-height:360px}}
+</style>
+</head>
+<body>
+<img id="bgGif" src="background.gif" alt="Background GIF">
+<img id="bossBg" src="boss-bg.png" alt="Boss Background PNG">
+<div class="game-bg-dim" id="gameBgDim"></div>
+<div id="mainMenu">
+  <div class="card">
+    <div class="hero">
+      <div class="badge">⚡ Indie Edition</div>
+      <h1>START MENU <span>CHAOS</span></h1>
+      <p>Ein cursed Speedrun-Game, in dem du eigentlich nur Start drücken willst. Aber das Spiel hat andere Pläne.</p>
+      <div class="features">
+        <div class="feature"><b>50+</b>Coins</div>
+        <div class="feature"><b>Events</b>Chaos</div>
+        <div class="feature"><b>Timer</b>Speedrun</div>
+      </div>
+      <div class="statGrid">
+        <div class="statItem bestOnly"><span>Beste Zeit</span><b id="menuBestTime">--:--.---</b></div>
+      </div>
+      <button class="mainBtn" id="refreshStatsBtn" style="margin-top:12px">↻ REFRESH <small>Stats aktualisieren</small></button>
+      <div class="leaderBox">
+        <div class="leaderTitle">🏆 Leaderboard</div>
+        <div id="leaderboardList" class="leaderList">Noch keine Scores.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="menuTitle">Run Setup</div>
+      <label style="font-weight:bold">Run-Ziel</label>
+      <select id="targetSelect"></select>
+      <label style="font-weight:bold">Schwierigkeit</label>
+      <select id="difficultySelect"></select>
+      <label class="progressToggle"><input type="checkbox" id="freePlayToggle"> Ohne Progress spielen</label>
+      <button class="mainBtn primary" id="playBtn">▶ PLAY <small>Solo-Speedrun starten</small></button>
+      <button class="mainBtn" id="bossArenaBtn">🔥 BOSS ARENA <small>Kämpfe direkt gegen den Boss</small></button>
+      
+      <button class="mainBtn danger" id="resetScoresBtn">🗑 RESET PROGRESS <small>Zeiten & Fortschritt löschen</small></button>
+      <button class="mainBtn" id="testBossBtn">🐉 TEST BOSS <small>Direkt Bossfight starten</small></button>
+      <div id="menuInfo">Bereit? Wähle dein Setup und drück PLAY.</div>
+    </div>
+
+    <div class="panel shopPanel">
+      <div class="menuTitle">Shop</div>
+      <div class="shopBox"><b>Chaos Coins:</b> <span id="shopMetaCoins">0</span></div>
+      <div class="shopTabs">
+        <button class="shopTab active" data-tab="skins">Skins</button>
+        <button class="shopTab" data-tab="runs">Runs</button>
+        <button class="shopTab" data-tab="difficulty">Difficulty</button><button class="shopTab" data-tab="upgrades">Upgrades</button>
+      </div>
+      <div class="shopList" id="shopList"></div>
+    </div>
+  </div>
+</div>
+<div id="stats">Coins: 0 / 100 | Klicks: 0</div><div id="timer">00:00.000</div><button id="unstuckBtn">Unstuck</button><div id="message">Willkommen im Startmenü.</div><div id="gameMenu"><h1 id="title">Start MENU</h1><button class="gameBtn" id="startBtn">Start</button><button class="gameBtn" id="optionsBtn">Options</button><button class="gameBtn" id="creditsBtn">Credits</button><button class="gameBtn" id="quitBtn">Quit</button></div>
+<script>
+(function(){
+var mainMenu=document.getElementById('mainMenu'),menuInfo=document.getElementById('menuInfo'),gameMenu=document.getElementById('gameMenu'),title=document.getElementById('title'),startBtn=document.getElementById('startBtn'),optionsBtn=document.getElementById('optionsBtn'),creditsBtn=document.getElementById('creditsBtn'),quitBtn=document.getElementById('quitBtn'),message=document.getElementById('message'),stats=document.getElementById('stats'),timer=document.getElementById('timer');
+var mode='solo',bossArenaMode=false,bossArenaUnlocked=false,phase='menu',clicks=0,menuClicks=0,eventClicks=0,coinClicks=0,nextCoin=rand(5,10),coins=0,loading=false,sound=true,music=true,musicTimer=null,audio=null,vol=.04,dark=0,timerStarted=false,timerDone=false,startTime=0,timerInt=null,speedLeft=0,difficulty='normal',targetCoins=100,finalBossDone=false,bossActive=false,lastMoveTime=Date.now(),buttonLocked=false,metaCoins=0,ownedSkins={},activeButtonSkin='default',activeCoinSkin='default',runEarnedCoins=0,unlockedTargets={},unlockedDiffs={},ownedUpgrades={},dropSizeLevel=0,rapidFireLevel=0,playerSpeedLevel=0,freePlay=false,currentShopTab='skins';
+var shopItems={button:[{id:'default',name:'Classic Start',price:0,preview:'Start'},{id:'neon',name:'Neon Button',price:50,preview:'Start'},{id:'fire',name:'Fire Button',price:75,preview:'🔥'},{id:'toxic',name:'Toxic Button',price:90,preview:'☣'},{id:'glitch',name:'Glitch Button',price:120,preview:'Start'},{id:'void',name:'Void Button',price:160,preview:'◼'},{id:'royal',name:'Royal Button',price:190,preview:'♛'},{id:'candy',name:'Candy Button',price:210,preview:'🍬'}],coin:[{id:'default',name:'Classic Coin',price:0,preview:'🪙'},{id:'ruby',name:'Ruby Coin Glow',price:60,preview:'♦'},{id:'diamond',name:'Diamond Coin Glow',price:100,preview:'💎'},{id:'skull',name:'Skull Coin',price:130,preview:'💀'},{id:'star',name:'Star Drop',price:170,preview:'⭐'}],runs:[{id:'50',name:'50 Coin Run',price:0,preview:'50'},{id:'75',name:'75 Coin Run',price:80,preview:'75'},{id:'100',name:'100 Coin Run',price:150,preview:'100'},{id:'200',name:'200 Coin Run',price:280,preview:'200'},{id:'250',name:'250 Coin Run',price:380,preview:'250'},{id:'300',name:'300 Coin Run',price:500,preview:'300'}],difficulty:[{id:'easy',name:'Easy',price:0,preview:'EZ'},{id:'normal',name:'Normal',price:0,preview:'N'},{id:'hard',name:'Hard',price:120,preview:'H'},{id:'insane',name:'Insane',price:250,preview:'💀'}],upgrades:[{id:'dropSize1',name:'Drop Size +',price:100,preview:'🪙+',level:1},{id:'dropSize2',name:'Drop Size ++',price:220,preview:'💰+',level:2},{id:'dropSize3',name:'Drop Size MAX',price:420,preview:'🎁+',level:3},{id:'rpsRandom',name:'Random Button (Boss)',price:500,preview:'🎲'}]};
+var trollMessages=['Fast geschafft. Also vielleicht.','Der Button hat Angst vor dir.','System prüft deine Geduld...','Start wird vorbereitet. Angeblich.','Du bist erstaunlich motiviert.','Dieser Button kündigt gleich.','Lade Spielspaß... Fehler 404.'];
+function loadMeta(){try{metaCoins=parseInt(localStorage.getItem('smc_metaCoins')||'0',10);bossArenaUnlocked=JSON.parse(localStorage.getItem('smc_bossArenaUnlocked')||'false');ownedSkins=JSON.parse(localStorage.getItem('smc_ownedSkins')||'{"button":{"default":true},"coin":{"default":true}}');activeButtonSkin=localStorage.getItem('smc_activeButtonSkin')||'default';activeCoinSkin=localStorage.getItem('smc_activeCoinSkin')||'default';unlockedTargets=JSON.parse(localStorage.getItem('smc_unlockedTargets')||'{"50":true}');unlockedDiffs=JSON.parse(localStorage.getItem('smc_unlockedDiffs')||'{"easy":true,"normal":true}');ownedUpgrades=JSON.parse(localStorage.getItem('smc_ownedUpgrades')||'{}');dropSizeLevel=parseInt(localStorage.getItem('smc_dropSizeLevel')||'0',10);rapidFireLevel=parseInt(localStorage.getItem('smc_rapidFireLevel')||'0',10);playerSpeedLevel=parseInt(localStorage.getItem('smc_playerSpeedLevel')||'0',10)}catch(e){metaCoins=0;ownedSkins={button:{default:true},coin:{default:true}};activeButtonSkin='default';activeCoinSkin='default';unlockedTargets={50:true};unlockedDiffs={easy:true,normal:true};ownedUpgrades={};dropSizeLevel=0;rapidFireLevel=0;playerSpeedLevel=0}}
+function isTargetUnlocked(id){return freePlay || !!unlockedTargets[id]}
+function isDiffUnlocked(id){return freePlay || !!unlockedDiffs[id]}
+function saveMeta(){localStorage.setItem('smc_metaCoins',String(metaCoins));localStorage.setItem('smc_bossArenaUnlocked',JSON.stringify(bossArenaUnlocked));localStorage.setItem('smc_ownedSkins',JSON.stringify(ownedSkins));localStorage.setItem('smc_activeButtonSkin',activeButtonSkin);localStorage.setItem('smc_activeCoinSkin',activeCoinSkin);localStorage.setItem('smc_unlockedTargets',JSON.stringify(unlockedTargets));localStorage.setItem('smc_unlockedDiffs',JSON.stringify(unlockedDiffs));localStorage.setItem('smc_ownedUpgrades',JSON.stringify(ownedUpgrades));localStorage.setItem('smc_dropSizeLevel',String(dropSizeLevel));localStorage.setItem('smc_rapidFireLevel',String(rapidFireLevel));localStorage.setItem('smc_playerSpeedLevel',String(playerSpeedLevel))}
+function applySkins(){startBtn.classList.remove('skin-neon','skin-fire','skin-toxic','skin-glitch','skin-void','skin-royal','skin-candy');if(activeButtonSkin!=='default')startBtn.classList.add('skin-'+activeButtonSkin)}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}function clamp(v,a,b){return Math.max(a,Math.min(v,b))}function fmt(ms){var m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),x=ms%1000;return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+'.'+String(x).padStart(3,'0')}function upd(){stats.textContent='Coins: '+coins+' / '+targetCoins+' | Klicks: '+clicks+(mode==='duel'?' | Player '+duelPlayer:'')}function startTimer(){if(timerStarted)return;timerStarted=true;timerDone=false;startTime=Date.now();timerInt=setInterval(function(){timer.textContent=fmt(Date.now()-startTime)},31)}function stopTimer(){if(!timerStarted||timerDone)return;timerDone=true;clearInterval(timerInt);timer.textContent=fmt(Date.now()-startTime)}
+function beep(t){if(!sound)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();var o=audio.createOscillator(),g=audio.createGain(),f={click:520,error:120,success:880,boop:300+Math.random()*400};o.type=t==='error'?'sawtooth':'sine';o.frequency.value=f[t]||440;o.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.18);o.start();o.stop(audio.currentTime+.18)}catch(e){}}
+function musicOn(){if(!music||musicTimer)return;musicTimer=setInterval(function(){beep(Math.random()<.7?'boop':'click')},950)}function musicOff(){clearInterval(musicTimer);musicTimer=null}
+function clearAll(){document.querySelectorAll('.coin,.fakeBtn,.xp,.screen,.mini,.xpDesktop,#darkOverlay,.rewardFlash,.coinParticle').forEach(function(e){e.remove()})}function reset(){finalBossDone=false;bossActive=false;runEarnedCoins=0;clearAll();phase='menu';clicks=0;menuClicks=0;eventClicks=0;coinClicks=0;nextCoin=rand(5,10);coins=0;loading=false;dark=0;vol=.04;speedLeft=0;timerStarted=false;timerDone=false;clearInterval(timerInt);timer.textContent='00:00.000';startBtn.className='gameBtn';startBtn.style.cssText='';startBtn.textContent='Start';gameMenu.appendChild(startBtn);applySkins();gameMenu.classList.remove('hidden');title.classList.remove('hidden');title.textContent='Start MENU';optionsBtn.classList.remove('hidden');creditsBtn.classList.remove('hidden');quitBtn.classList.remove('hidden');message.textContent=mode==='duel'?'Player '+duelPlayer+': Bereit?':'Willkommen im Startmenü.';upd()}
+function begin(m){bossArenaMode=false;freePlay=!!(document.getElementById('freePlayToggle')&&document.getElementById('freePlayToggle').checked);mode=m;difficulty=document.getElementById('difficultySelect').value;targetCoins=parseInt(document.getElementById('targetSelect').value,10);if(!freePlay&&(!isTargetUnlocked(String(targetCoins))||!isDiffUnlocked(difficulty))){menuInfo.innerHTML='<b>Gesperrt.</b><br>Bitte erst im Shop freischalten oder Freeplay aktivieren.';refreshMenuStats();return;}if(mode==='duel'){duelPlayer=1;duelTimes=[]}mainMenu.classList.add('hidden');reset();document.getElementById('bgGif').style.display='block';document.getElementById('gameBgDim').style.display='block';message.textContent='Difficulty: '+difficulty.toUpperCase()+' | Ziel: '+targetCoins+' Coins';musicOn()}function save(ms){var s=JSON.parse(localStorage.getItem('smc_scores')||'[]');s.push({time:ms,clicks:clicks,target:targetCoins,difficulty:difficulty,date:new Date().toLocaleString()});s.sort(function(a,b){return a.time-b.time});localStorage.setItem('smc_scores',JSON.stringify(s.slice(0,10)))}function leaderboard(){var s=JSON.parse(localStorage.getItem('smc_scores')||'[]');menuInfo.innerHTML=s.length?'<b>Leaderboard</b><br>'+s.map(function(x,i){return(i+1)+'. '+fmt(x.time)+' · '+x.clicks+' Klicks · '+(x.target||100)+' Coins · '+(x.difficulty||'normal')}).join('<br>'):'Noch keine Scores.'}
+function getBestScore(){var s=JSON.parse(localStorage.getItem('smc_scores')||'[]');if(!s.length)return null;s.sort(function(a,b){return a.time-b.time});return s[0]}
+function refreshMenuStats(){loadMeta();
+  var bossBtn=document.getElementById('bossArenaBtn');
+  if(bossBtn){
+    if(!bossArenaUnlocked && !freePlay){
+      bossBtn.innerHTML='🔒 BOSS ARENA <small>Kaufen für 50 Coins</small>';
+      bossBtn.style.opacity='.7';
+    }else{
+      bossBtn.innerHTML='🔥 BOSS ARENA <small>Kämpfe direkt gegen den Boss</small>';
+      bossBtn.style.opacity='1';
+    }
+  }freePlay=!!(document.getElementById('freePlayToggle')&&document.getElementById('freePlayToggle').checked);var best=getBestScore();var mm=document.getElementById('menuMetaCoins'),sm=document.getElementById('shopMetaCoins'),bt=document.getElementById('menuBestTime'),br=document.getElementById('menuBestRun');if(mm)mm.textContent=metaCoins;if(sm)sm.textContent=metaCoins;if(bt)bt.textContent=best?fmt(best.time):'--:--.---';if(br)br.textContent=best?(best.target||100)+' / '+(best.difficulty||'normal'):'-';populateRunOptions();populateDifficultyOptions();renderShop()}
+function populateRunOptions(){var sel=document.getElementById('targetSelect');if(!sel)return;var current=sel.value||'50';sel.innerHTML='';shopItems.runs.forEach(function(item){var opt=document.createElement('option');opt.value=item.id;opt.textContent=item.name+(isTargetUnlocked(item.id)?'':' 🔒');opt.disabled=!isTargetUnlocked(item.id);sel.appendChild(opt)});if([...sel.options].some(function(o){return o.value===current&&!o.disabled}))sel.value=current;else sel.value='50'}
+function populateDifficultyOptions(){var sel=document.getElementById('difficultySelect');if(!sel)return;var current=sel.value||'normal';sel.innerHTML='';shopItems.difficulty.forEach(function(item){var opt=document.createElement('option');opt.value=item.id;opt.textContent=item.name+(isDiffUnlocked(item.id)?'':' 🔒');opt.disabled=!isDiffUnlocked(item.id);sel.appendChild(opt)});if([...sel.options].some(function(o){return o.value===current&&!o.disabled}))sel.value=current;else sel.value='normal'}
+function setShopTab(tab){currentShopTab=tab;document.querySelectorAll('.shopTab').forEach(function(b){b.classList.toggle('active',b.dataset.tab===tab)});renderShop()}
+function renderShop(){loadMeta();var list=document.getElementById('shopList');var sm=document.getElementById('shopMetaCoins');if(sm)sm.textContent=metaCoins;if(!list)return;var items=[];if(currentShopTab==='skins')items=shopItems.button.map(function(x){x.type='button';return x}).concat(shopItems.coin.map(function(x){x.type='coin';return x}));if(currentShopTab==='runs')items=shopItems.runs.map(function(x){x.type='runs';return x});if(currentShopTab==='difficulty')items=shopItems.difficulty.map(function(x){x.type='difficulty';return x});if(currentShopTab==='upgrades')items=shopItems.upgrades.map(function(x){x.type='upgrades';return x});list.innerHTML='';items.forEach(function(item){var owned=false,active=false;if(item.type==='button'){owned=ownedSkins.button&&ownedSkins.button[item.id];active=activeButtonSkin===item.id}else if(item.type==='coin'){owned=ownedSkins.coin&&ownedSkins.coin[item.id];active=activeCoinSkin===item.id}else if(item.type==='runs'){owned=isTargetUnlocked(item.id);active=document.getElementById('targetSelect')&&document.getElementById('targetSelect').value===item.id}else if(item.type==='difficulty'){owned=isDiffUnlocked(item.id);active=document.getElementById('difficultySelect')&&document.getElementById('difficultySelect').value===item.id}else{owned=!!ownedUpgrades[item.id];active=owned}var row=document.createElement('div');row.className='shopItem';row.innerHTML='<div class="shopPreview '+(item.type==='button'&&item.id!=='default'?'skin-'+item.id:'')+'">'+item.preview+'</div><div class="shopMeta"><b>'+item.name+'</b><br><small>'+(owned?'Freigeschaltet':'Preis: '+item.price+' Chaos Coins')+'</small></div><button class="shopBuy">'+(active?'Aktiv':owned?'Wählen':'Kaufen')+'</button>';var btn=row.querySelector('.shopBuy');btn.disabled=active;btn.onclick=function(){buyOrEquip(item.type,item.id)};list.appendChild(row)})}
+function buyOrEquip(type,id){var pool=type==='runs'?shopItems.runs:(type==='difficulty'?shopItems.difficulty:shopItems[type]);var item=pool.find(function(x){return x.id===id});if(!item)return;if(type==='button'||type==='coin'){if(!ownedSkins[type])ownedSkins[type]={};if(!ownedSkins[type][id]){if(metaCoins<item.price){menuInfo.innerHTML='<b>Nicht genug Chaos Coins!</b><br>Du brauchst '+item.price+' Coins.';return}metaCoins-=item.price;ownedSkins[type][id]=true}if(type==='button')activeButtonSkin=id;else activeCoinSkin=id;applySkins()}else if(type==='runs'){if(!unlockedTargets[id]){if(metaCoins<item.price){menuInfo.innerHTML='<b>Nicht genug Chaos Coins!</b><br>Du brauchst '+item.price+' Coins.';return}metaCoins-=item.price;unlockedTargets[id]=true}document.getElementById('targetSelect').value=id}else if(type==='difficulty'){if(!unlockedDiffs[id]){if(metaCoins<item.price){menuInfo.innerHTML='<b>Nicht genug Chaos Coins!</b><br>Du brauchst '+item.price+' Coins.';return}metaCoins-=item.price;unlockedDiffs[id]=true}document.getElementById('difficultySelect').value=id}else if(type==='upgrades'){if(ownedUpgrades[id])return;if(metaCoins<item.price){menuInfo.innerHTML='<b>Nicht genug Chaos Coins!</b><br>Du brauchst '+item.price+' Coins.';return}metaCoins-=item.price;ownedUpgrades[id]=true;if(item.stat==='dropSize')dropSizeLevel=Math.max(dropSizeLevel,item.level||1);if(item.stat==='rapidFire')rapidFireLevel=Math.max(rapidFireLevel,item.level||1);if(item.stat==='playerSpeed')playerSpeedLevel=Math.max(playerSpeedLevel,item.level||1)}saveMeta();refreshMenuStats()}
+function overlay(){var o=document.getElementById('darkOverlay');if(!o){o=document.createElement('div');o.id='darkOverlay';o.style.cssText='position:fixed;inset:0;background:#000;pointer-events:none;z-index:200';document.body.appendChild(o)}o.style.opacity=dark}function pos(el){var p=90,w=el.offsetWidth||220,h=el.offsetHeight||55,mx=Math.max(p,innerWidth-w-p),my=Math.max(p,innerHeight-h-p);return{x:rand(p,mx),y:rand(p,my)}}function moveBtn(){
+  if(buttonLocked || loading || document.querySelector('.screen,.mini,.xp,.xpDesktop')) return;
+
+  lastMoveTime=Date.now();
+  document.body.appendChild(startBtn);
+  startBtn.classList.remove('hidden');
+  startBtn.classList.add('moving');
+  startBtn.style.display='block';
+  startBtn.style.visibility='visible';
+  startBtn.style.opacity='1';
+  startBtn.style.position='fixed';
+  startBtn.style.zIndex='1200';
+  startBtn.style.transform='none';
+
+  var safe=90;
+  var w=startBtn.offsetWidth||220;
+  var h=startBtn.offsetHeight||60;
+  var minX=safe;
+  var minY=safe;
+  var maxX=Math.max(minX,window.innerWidth-w-safe);
+  var maxY=Math.max(minY,window.innerHeight-h-safe);
+  var x=rand(minX,maxX);
+  var y=rand(minY,maxY);
+
+  startBtn.style.left=x+'px';
+  startBtn.style.top=y+'px';
+}
+function reward(delta){var r=document.createElement('div');r.className='rewardFlash '+(delta>=0?'rewardPlus':'rewardMinus');r.textContent=(delta>=0?'+':'')+delta+' Coins';document.body.appendChild(r);if(delta>5){coinExplosion();jackpotSound()}else beep(delta>=0?'success':'error');setTimeout(function(){r.remove()},1000)}function coinExplosion(){for(var i=0;i<18;i++){var p=document.createElement('div');p.className='coinParticle';p.textContent='🪙';p.style.setProperty('--x',rand(-260,260)+'px');p.style.setProperty('--y',rand(-220,180)+'px');p.style.setProperty('--r',rand(-540,540)+'deg');document.body.appendChild(p);setTimeout((function(x){return function(){x.remove()}})(p),800)}}function jackpotSound(){var n=0,ding=setInterval(function(){beep('success');if(++n>=8)clearInterval(ding)},55)}function addCoins(delta){var before=coins;coins=Math.max(0,coins+delta);var real=coins-before;if(real>0)runEarnedCoins+=real;if(real!==0)reward(real);upd();if(coins>=targetCoins)win();return real}
+function randomCoinValue(){var r=Math.random();if(r<.58)return 1;if(r<.78)return 2;if(r<.92)return 3;if(r<.98)return 4;return 5}
+function coin(v){v=v||1;var c=document.createElement('div');c.className='coin';if(activeCoinSkin==='ruby')c.classList.add('coin-ruby');if(activeCoinSkin==='diamond')c.classList.add('coin-diamond');if(activeCoinSkin==='skull')c.classList.add('coin-skull');if(activeCoinSkin==='star')c.classList.add('coin-star');c.style.fontSize=(54+dropSizeLevel*8)+'px';c.textContent=v>1?'💰':'🪙';c.style.left=rand(40,innerWidth-80)+'px';c.style.top=rand(70,innerHeight-80)+'px';c.onclick=function(e){e.stopPropagation();c.remove();message.textContent='+'+v+' Coin!';addCoins(v)};document.body.appendChild(c);setTimeout(function(){c.remove()},6000)}
+function win(){
+  if(bossActive)return;
+  if(!finalBossDone){
+    finalBossDone=true;
+    finalBossEvent();
+    return;
+  }
+  showEndScreen(true);
+}
+function actualWin(){showEndScreen(true)}
+function showEndScreen(won){
+  stopTimer();
+  loading=false;
+  musicOff();
+
+  var ms=Date.now()-startTime;
+  var earnedMeta=bossArenaMode?(won?2:-1):((!freePlay && won)?Math.floor(targetCoins/2):0);
+
+  if(won && mode==='solo')save(ms);
+  if(earnedMeta!==0){metaCoins+=earnedMeta;saveMeta()}
+
+  var status=won?'GEWONNEN':'VERLOREN';
+  var statusText=won?'Du hast den Boss besiegt.':'Der Boss hat dich zerstört.';
+  var resultColor=won?'#69ff9a':'#ff4d4d';
+
+  var duel='';
+  if(mode==='duel'){
+    duelTimes.push(ms);
+    if(duelPlayer===1){
+      duelPlayer=2;
+      var next=screen('<h1>Player 1 fertig!</h1><p>Zeit: '+fmt(ms)+'</p><button class="gameBtn" id="nextP">Player 2 starten</button>');
+      document.getElementById('nextP').onclick=function(){next.remove();reset()};
+      return;
+    }
+    duel='<p>Player 1: '+fmt(duelTimes[0])+'</p><p>Player 2: '+fmt(duelTimes[1])+'</p><h2>'+(duelTimes[0]<duelTimes[1]?'Player 1 gewinnt!':'Player 2 gewinnt!')+'</h2>';
+  }
+
+  var w=screen('<h1 style="color:'+resultColor+'">'+status+'</h1><p>Ziel erreicht: '+targetCoins+' Coins</p><p>Chaos Coins: +'+earnedMeta+'</p><p>Zeit: '+timer.textContent+'</p><p>Bossfight: '+statusText+'</p>'+duel+'<button class="gameBtn" id="retryEnd">Erneut versuchen</button><button class="gameBtn" id="backEnd">Hauptmenü</button>');
+
+  document.getElementById('backEnd').onclick=function(){
+    w.remove();
+    var bossBg=document.getElementById('bossBg');
+    var normalBg=document.getElementById('bgGif');
+    var dim=document.getElementById('gameBgDim');
+    if(bossBg)bossBg.style.display='none';
+    if(normalBg)normalBg.style.display='none';
+    if(dim)dim.style.display='none';
+    mainMenu.classList.remove('hidden');
+    reset();
+    refreshMenuStats();
+  };
+
+  document.getElementById('retryEnd').onclick=function(){
+    w.remove();
+    reset();
+    mainMenu.classList.add('hidden');
+    document.getElementById('bgGif').style.display='block';
+    document.getElementById('gameBgDim').style.display='block';
+    message.textContent='Retry gestartet. Ziel: '+targetCoins+' Coins.';
+    musicOn();
+  };
+}
+function screen(html){var d=document.createElement('div');d.className='screen';d.innerHTML=html;d.style.zIndex='9999';d.style.pointerEvents='auto';document.body.appendChild(d);return d}
+function keepInWindow(el){setTimeout(function(){var r=el.getBoundingClientRect();var pad=18;var x=Math.min(Math.max(r.left,pad),window.innerWidth-r.width-pad);var y=Math.min(Math.max(r.top,pad),window.innerHeight-r.height-pad);el.style.left=x+'px';el.style.top=y+'px';el.style.transform='none'},0)}
+function xp(t,b,w){loading=true;startBtn.classList.add('hidden');var d=document.createElement('div');d.className='xp';d.style.minWidth=(w||360)+'px';d.innerHTML='<div class="xpTitle"><span>'+t+'</span><span>✕</span></div><div class="xpBody">'+b+'</div>';document.body.appendChild(d);keepInWindow(d);var x=d.querySelector('.xpTitle span:last-child');if(x){x.style.cursor='pointer';x.onclick=function(){d.remove();loading=false;startBtn.classList.remove('hidden');moveBtn()}}return d}
+function fakeLoading(){if(loading)return;loading=true;startBtn.classList.add('hidden');var s=screen('<div>Loading...</div><div class="spinner"></div>');setTimeout(function(){s.remove();loading=false;message.textContent='War wohl nix...';moveBtn()},3500)}function errorWin(){addCoins(-1);var w=xp('Critical Start Error','<h3>⚠️ Start.exe stopped responding</h3><p>-1 Coin</p><button id="ok">Okay...</button>',420);document.getElementById('ok').onclick=function(){w.remove();moveBtn()}}function fakeBtns(){for(var i=0;i<6;i++){var f=document.createElement('button');f.className='fakeBtn';f.textContent='Start';document.body.appendChild(f);var p=pos(f);f.style.left=p.x+'px';f.style.top=p.y+'px';f.onclick=function(e){e.stopPropagation();this.textContent='NOPE';beep('error');var self=this;setTimeout(function(){self.remove()},400)};setTimeout((function(x){return function(){x.remove()}})(f),5000)}}function resetMenu(){gameMenu.appendChild(startBtn);startBtn.className='gameBtn';startBtn.style.cssText='';title.classList.remove('hidden');optionsBtn.classList.remove('hidden');creditsBtn.classList.remove('hidden');quitBtn.classList.remove('hidden');gameMenu.classList.remove('hidden');phase='menu';menuClicks=0;message.textContent='Zurück zum Startmenü.'}function speed(){speedLeft=6;message.textContent='Speed x3!';moveBtn()}function pulse(){startBtn.classList.add('pulse');setTimeout(function(){startBtn.classList.remove('pulse')},4000)}function fakeWin(){var s=screen('<h1>You Win!</h1><p>Oder doch nicht...</p>');setTimeout(function(){s.remove();moveBtn()},2000)}function cursor(){document.body.style.cursor='none';setTimeout(function(){document.body.style.cursor='default'},3000)}function rain(){for(var i=0;i<5;i++)setTimeout(function(){coin(1)},i*300)}function fakeCoin(){var c=document.createElement('div');c.className='coin';c.textContent='🪙';c.style.left=rand(40,innerWidth-80)+'px';c.style.top=rand(70,innerHeight-80)+'px';c.onclick=function(e){e.stopPropagation();c.remove();var real=addCoins(-2);message.textContent='Fake Coin! '+real+' Coins'};document.body.appendChild(c);setTimeout(function(){c.remove()},5000)}function invisible(){startBtn.style.opacity='.15';setTimeout(function(){startBtn.style.opacity='1'},3500)}function slot(){var s=xp('Casino.exe','<div style="text-align:center"><h2>🎰 SLOT MACHINE</h2><div id="reels" style="font-size:42px;letter-spacing:10px;margin:18px 0">❔ ❔ ❔</div><p id="slotText">Spinning...</p></div>',420),icons=['🍒','🔔','💎','🪙','💀'],n=0,i=setInterval(function(){document.getElementById('reels').textContent=icons[rand(0,4)]+' '+icons[rand(0,4)]+' '+icons[rand(0,4)];if(++n>12){clearInterval(i);if(Math.random()<.3){addCoins(5);document.getElementById('slotText').textContent='WIN +5'}else{addCoins(-2);document.getElementById('slotText').textContent='LOSE -2'}setTimeout(function(){s.remove();if(coins<targetCoins)moveBtn()},1200)}},130)}function desktop(){loading=true;startBtn.classList.add('hidden');var d=document.createElement('div');d.className='xpDesktop';d.innerHTML='<div class="xpIcon" style="left:30px;top:30px"><span class="ico">💻</span>My Computer</div><div class="xpIcon" style="left:30px;top:130px"><span class="ico">🗑️</span>Recycle Bin</div><div class="xp" style="min-width:420px"><div class="xpTitle"><span>Start Menu Chaos</span><span>✕</span></div><div class="xpBody"><h3>🖥️ You have been minimized.</h3><button id="ret">Return</button></div></div><div class="xpTaskbar"><div class="xpStart">start</div><div class="xpTray">13:37</div></div>';document.body.appendChild(d);document.getElementById('ret').onclick=function(){d.remove();loading=false;startBtn.classList.remove('hidden');moveBtn()}}
+function mini(){loading=true;startBtn.classList.add('hidden');var intro=screen('<h1>MINIGAME</h1><p><b>WASD</b> oder <b>Pfeiltasten</b> bewegen</p><p><b>Leertaste</b> schießen</p><p>Schieße die fallenden Starts ab.</p><p style="opacity:.7">Startet gleich...</p>');setTimeout(function(){intro.remove();startMiniGame()},3200)}
+function startMiniGame(){var g=document.createElement('div');g.className='mini';g.innerHTML='<div class="hud" id="hud">MINIGAME<br>Punkte: 0 / 10 | HP: 3</div><div class="ship" id="ship">🚀</div>';document.body.appendChild(g);var ship=document.getElementById('ship'),hud=document.getElementById('hud'),x=innerWidth/2,score=0,hp=3,bul=[],ene=[],keys={},over=false,can=true,loopId,shipSpeed=9+(playerSpeedLevel*2),shootCooldown=Math.max(70,180-(rapidFireLevel*35)),bulletSpeed=13+(rapidFireLevel*3);function hudUp(){hud.innerHTML='MINIGAME<br>Punkte: '+score+' / 10 | HP: '+hp}function shoot(){if(!can||over)return;can=false;var b=document.createElement('div');b.className='bullet';b.style.left=(x-3)+'px';b.style.top=(innerHeight-95)+'px';g.appendChild(b);bul.push(b);setTimeout(function(){can=true},shootCooldown)}function spawn(){if(over)return;var e=document.createElement('div');e.className='enemy';e.textContent='Start';e.style.left=rand(30,innerWidth-130)+'px';e.style.top='-45px';e.dataset.speed=String(3+Math.random()*3);g.appendChild(e);ene.push(e)}function finish(w){if(over)return;over=true;clearInterval(si);cancelAnimationFrame(loopId);document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);addCoins(w?8:-4);hud.innerHTML=w?'GEWONNEN +8':'VERLOREN -4';setTimeout(function(){g.remove();loading=false;startBtn.classList.remove('hidden');if(coins<targetCoins)moveBtn()},1300)}function kd(e){keys[e.key.toLowerCase()]=true;if(e.code==='Space'){e.preventDefault();shoot()}}function ku(e){keys[e.key.toLowerCase()]=false}document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);var si=setInterval(spawn,620);function loop(){if(over)return;if(keys.a||keys.arrowleft)x-=shipSpeed;if(keys.d||keys.arrowright)x+=shipSpeed;x=clamp(x,35,innerWidth-35);ship.style.left=x+'px';bul.forEach(function(b){b.style.top=(parseInt(b.style.top)-bulletSpeed)+'px'});ene.forEach(function(e){e.style.top=(parseFloat(e.style.top)+parseFloat(e.dataset.speed))+'px'});bul.slice().forEach(function(b){var br=b.getBoundingClientRect();ene.slice().forEach(function(e){var er=e.getBoundingClientRect();if(!(br.right<er.left||br.left>er.right||br.bottom<er.top||br.top>er.bottom)){b.remove();e.remove();bul=bul.filter(function(z){return z!==b});ene=ene.filter(function(z){return z!==e});score++;hudUp();if(score>=10)finish(true)}})});var sr=ship.getBoundingClientRect();ene.slice().forEach(function(e){var er=e.getBoundingClientRect();if(!(er.right<sr.left||er.left>sr.right||er.bottom<sr.top||er.top>sr.bottom)||parseInt(e.style.top)>innerHeight){e.remove();ene=ene.filter(function(z){return z!==e});hp--;hudUp();if(hp<=0)finish(false)}});loopId=requestAnimationFrame(loop)}loop()}
+function simpleWindow(){var w=xp('Random Window','<p>Are you sure?</p><button id="yes">Yes</button><button id="no">No</button>',360);var closed=false;function close(){if(closed)return;closed=true;w.remove();moveBtn()}document.getElementById('yes').onclick=close;document.getElementById('no').onclick=close;setTimeout(close,6000)}function youtube(){var w=xp('YouTube','<div style="background:#000;height:180px;display:flex;align-items:center;justify-content:center"><button id="play">▶️</button></div><p>Totally real video</p>',460);document.getElementById('play').onclick=function(){w.remove();moveBtn()}}function chat(){var w=xp('Chat','<div id="chat">Hallo?</div>',360),m=['Bist du da?','Warum klickst du weiter?','👀'],i=0,t=setInterval(function(){document.getElementById('chat').innerHTML+='<br>'+m[i++%m.length]},700);setTimeout(function(){clearInterval(t);w.remove();moveBtn()},4000)}function volume(){for(var i=0;i<6;i++){var v=xp('Volume','🔊 '+rand(0,100)+'%',240);v.style.left=rand(20,Math.max(20,innerWidth-280))+'px';v.style.top=rand(70,Math.max(70,innerHeight-180))+'px';v.style.transform='none';keepInWindow(v);setTimeout((function(x){return function(){x.remove()}})(v),2000)}}function license(){var w=xp('License Agreement','<p>Please accept to continue.</p><p id="licHint" style="font-size:12px;color:#555">Der Button wird irgendwann müde...</p><button id="acc">Accept</button><button id="licCancel">Cancel</button>',430),b=document.getElementById('acc'),cancel=document.getElementById('licCancel'),hint=document.getElementById('licHint');var dodges=0,closed=false;function closeLicense(txt){if(closed)return;closed=true;if(txt)message.textContent=txt;w.remove();moveBtn()}b.onmouseenter=function(){dodges++;b.style.position='relative';b.style.left=rand(-45,45)+'px';b.style.top=rand(-18,18)+'px';if(dodges>=5){b.style.left='0px';b.style.top='0px';hint.textContent='Okay... jetzt kannst du klicken.';b.onmouseenter=null}};b.onclick=function(){closeLicense('Lizenz akzeptiert. Leider.')};cancel.onclick=function(){closeLicense('Du hast nicht akzeptiert. Das Spiel akzeptiert das nicht.')};setTimeout(function(){closeLicense('License Agreement timed out. Weiter gehts.')},8000)}
+function spawnBossFlame(){var f=document.createElement('div');f.className='flameParticle';f.textContent='🔥';f.style.left=rand(Math.floor(innerWidth*.34),Math.floor(innerWidth*.66))+'px';f.style.top=rand(Math.floor(innerHeight*.42),Math.floor(innerHeight*.72))+'px';document.body.appendChild(f);setTimeout(function(){f.remove()},1200)}
+function spawnCrack(extra){var c=document.createElement('div');c.className='crack';c.style.left=rand(20,Math.max(20,innerWidth-240))+'px';c.style.top=rand(50,Math.max(50,innerHeight-250))+'px';c.style.transform='rotate('+rand(-35,35)+'deg)';if(extra){c.style.width='300px';c.style.height='300px'}document.body.appendChild(c);setTimeout(function(){c.remove()},1200)}
+function bossDamageFlash(){var o=document.createElement('div');o.className='bossDamageOverlay';document.body.appendChild(o);setTimeout(function(){o.remove()},260)}
+function clearBossDestruction(){document.body.style.filter='none';document.querySelectorAll('.crack,.bossDamageOverlay').forEach(function(x){x.remove()})}
+function startBossBg(){var bg=document.getElementById('bgGif'),boss=document.getElementById('bossBg');if(bg)bg.style.display='none';if(boss){boss.style.display='block';boss.className='bossAlive';boss.classList.remove('bossHitFlash')}}
+function stopBossBg(){var bg=document.getElementById('bgGif'),boss=document.getElementById('bossBg');if(boss){boss.style.display='none';boss.className='';boss.classList.remove('bossHitFlash')}if(bg)bg.style.display='block'}
+function bossHitBg(){var boss=document.getElementById('bossBg');if(!boss)return;boss.classList.add('bossHitFlash');setTimeout(function(){boss.classList.remove('bossHitFlash')},160)}
+function bossAngryBg(){var boss=document.getElementById('bossBg');if(boss){boss.className='bossAngry'}}
+function boss(){startBossBg();loading=true;startBtn.classList.add('hidden');var b=document.createElement('div');b.className='mini';b.style.background='radial-gradient(circle,rgba(0,0,0,.18),rgba(0,0,0,.62))';b.innerHTML='<div class="hud" id="bossHud">BOSS FIGHT<br>Player HP: 3 | Boss HP: 6<br>Wähle den richtigen Start!</div>';document.body.appendChild(b);var flameTimer=setInterval(spawnBossFlame,120);var playerHP=3,bossHP=6,round=0,buttons=[];function cleanup(){buttons.forEach(function(x){x.remove()});buttons=[]}function render(){cleanup();round++;document.getElementById('bossHud').innerHTML='BOSS FIGHT<br>Player HP: '+playerHP+' | Boss HP: '+bossHP+'<br>Runde '+round+': Nur ein Start macht Schaden!';var effects=['damage','bad','coin','nothing'];effects.sort(function(){return Math.random()-.5});for(var i=0;i<4;i++){var btn=document.createElement('button');btn.className='gameBtn';btn.textContent='Start';btn.style.position='fixed';btn.style.left=rand(90,innerWidth-280)+'px';btn.style.top=rand(110,innerHeight-140)+'px';b.appendChild(btn);buttons.push(btn);(function(effect,button){button.onclick=function(e){e.stopPropagation();if(effect==='damage'){bossHP--;message.textContent='Treffer! Boss -1 HP';beep('success');bossHitBg();bossDamageFlash();spawnCrack(bossHP<=2);if(bossHP<=3){bossAngryBg();spawnCrack(true)}if(bossHP<=2){spawnCrack(true);document.body.style.filter='contrast(1.35) brightness(1.12) saturate(1.6)'}}else if(effect==='bad'){playerHP--;addCoins(-5);message.textContent='Falle! Player -1 HP & -5 Coins'}else if(effect==='coin'){addCoins(5);message.textContent='Bonus! +5 Coins'}else message.textContent='Nichts passiert...';if(bossHP<=0){cleanup();clearInterval(flameTimer);document.querySelectorAll('.flameParticle').forEach(function(x){x.remove()});clearBossDestruction();stopBossBg();addCoins(15);b.remove();loading=false;startBtn.classList.remove('hidden');if(coins<targetCoins)moveBtn();return}if(playerHP<=0){cleanup();clearInterval(flameTimer);document.querySelectorAll('.flameParticle').forEach(function(x){x.remove()});clearBossDestruction();stopBossBg();addCoins(-10);b.remove();loading=false;startBtn.classList.remove('hidden');message.textContent='Bossfight verloren. -10 Coins';moveBtn();return}render()}})(effects[i],btn)}}render()}
+function ghost(){var g=document.createElement('button');g.className='fakeBtn';g.textContent='BOT';document.body.appendChild(g);var i=setInterval(function(){g.style.left=rand(0,innerWidth-220)+'px';g.style.top=rand(0,innerHeight-80)+'px';if(Math.random()<.35)addCoins(-1)},1000);setTimeout(function(){clearInterval(i);g.remove()},6000)}function glitch(){var i=0,t=setInterval(function(){document.body.style.transform='translate('+rand(-20,20)+'px,'+rand(-20,20)+'px) rotate('+rand(-5,5)+'deg)';document.body.style.filter='hue-rotate('+rand(0,360)+'deg)';if(i++>18){clearInterval(t);document.body.style.transform='none';document.body.style.filter='none';addCoins(10)}},80)}function zoom(){document.body.style.transition='transform .3s';document.body.style.transform='scale(1.35)';setTimeout(function(){document.body.style.transform='scale(1)'},1200)}function watch(){var h=function(e){startBtn.style.left=clamp(innerWidth-e.clientX,80,innerWidth-260)+'px';startBtn.style.top=clamp(innerHeight-e.clientY,80,innerHeight-120)+'px'};document.addEventListener('mousemove',h);message.textContent='Ich sehe dich...';setTimeout(function(){document.removeEventListener('mousemove',h);moveBtn()},4000)}
+function trapButtonEvent(){buttonLocked=true;startBtn.classList.add('hidden');var bad=document.createElement('button'),good=document.createElement('button');[bad,good].forEach(function(b){b.className='fakeBtn';b.textContent='Start';b.style.background='white';b.style.color='black';b.style.border='3px solid';document.body.appendChild(b);var p=pos(b);b.style.left=p.x+'px';b.style.top=p.y+'px'});bad.style.borderColor='red';good.style.borderColor='lime';function cleanup(){bad.remove();good.remove();buttonLocked=false;startBtn.classList.remove('hidden');moveBtn()}bad.onclick=function(e){e.stopPropagation();var real=addCoins(-5);message.textContent='Trap! '+real+' Coins';cleanup()};good.onclick=function(e){e.stopPropagation();cleanup()};setTimeout(cleanup,6000)}function mirrorEvent(){document.body.style.transform='scaleX(-1)';setTimeout(function(){document.body.style.transform='none';moveBtn()},3000)}function freezeEvent(){loading=true;message.textContent='Fake Lag...';setTimeout(function(){loading=false;message.textContent='Lag spike over';moveBtn()},2000)}function diceEvent(){var roll=rand(1,6);if(roll<=2){var real=addCoins(5);message.textContent=(real>=0?'+':'')+real+' Coins'}else if(roll<=4){var real=addCoins(-10);message.textContent=real+' Coins'}else{message.textContent='CHAOS';normalEvent()}}function fakePauseEvent(){var w=xp('Paused','<button id="resume">Resume</button><button id="quitFake">Quit</button>',300);document.getElementById('resume').onclick=function(){};var q=document.getElementById('quitFake');q.onmouseenter=function(){q.style.position='relative';q.style.left=rand(-100,100)+'px'};setTimeout(function(){w.remove();moveBtn()},3000)}
+function browserEvent(){var w=xp('Internet Explorer','<div style="background:white;color:black;padding:10px;border:1px solid #999;margin-bottom:10px">🔎 how to quit start menu chaos</div><p>Suchergebnisse:</p><button id="b1">Download Exit Button</button><button id="b2">Close Game Tutorial</button><button id="b3">Totally Safe Link</button>',520);document.getElementById('b1').onclick=function(){var real=addCoins(-3);message.textContent='Fake Download! '+real+' Coins';w.remove();moveBtn()};document.getElementById('b2').onclick=function(){message.textContent='Tutorial not found.';w.remove();moveBtn()};document.getElementById('b3').onclick=function(){w.remove();virusDownloadMini()}}function virusDownloadMini(){var w=xp('Download Manager','<p>Downloading exit.exe...</p><div style="height:18px;background:white;border:1px solid #777"><div id="dlbar" style="height:100%;width:0%;background:lime"></div></div><p id="dltext">0%</p>',420);var p=0,i=setInterval(function(){p+=rand(8,18);if(p>100)p=100;document.getElementById('dlbar').style.width=p+'%';document.getElementById('dltext').textContent=p+'%';if(p>=100){clearInterval(i);var real=addCoins(-5);document.getElementById('dltext').textContent='Installed malware. '+real+' Coins';setTimeout(function(){w.remove();moveBtn()},1200)}},220)}
+function achievementSpamEvent(){var texts=['Achievement unlocked: Wrong Button','Achievement unlocked: Still Here','Achievement unlocked: Pain','Achievement unlocked: Why?','Achievement unlocked: Coin Enjoyer'];for(var i=0;i<5;i++){setTimeout(function(){var t=document.createElement('div');t.textContent=texts[rand(0,texts.length-1)];t.style.cssText='position:fixed;right:20px;bottom:'+rand(60,260)+'px;z-index:3500;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.25);padding:12px 18px;border-radius:12px;font-weight:bold;box-shadow:0 10px 30px rgba(0,0,0,.5)';document.body.appendChild(t);setTimeout(function(){t.remove()},2200)},i*350)}setTimeout(moveBtn,2200)}function fakeUpdateEvent(){var w=xp('Windows Update','<h3>Installing Update 1 of 999</h3><p id="updText">Bitte warten...</p><button id="cancelUpd">Cancel</button>',430),c=document.getElementById('cancelUpd'),n=1;var run=setInterval(function(){n++;document.getElementById('updText').textContent='Installing Update '+n+' of 999';if(n>=7){clearInterval(run);w.remove();message.textContent='Update failed successfully.';moveBtn()}},550);c.onmouseenter=function(){c.style.position='relative';c.style.left=rand(-90,90)+'px';c.style.top=rand(-25,25)+'px'};c.onclick=function(){clearInterval(run);w.remove();message.textContent='Cancel ignored.';moveBtn()}}function captchaEvent(){var w=xp('Captcha','<p>Bitte bestätige:</p><label><input type="checkbox" id="capCheck"> Ich bin kein Button</label><div id="capMore" style="margin-top:12px"></div>',420);document.getElementById('capCheck').onchange=function(){document.getElementById('capMore').innerHTML='<p>Klicke jetzt den echten Start:</p><button id="capOk">Start</button><button id="capNo">Start</button>';document.getElementById('capOk').onclick=function(){addCoins(3);w.remove();message.textContent='Captcha bestanden. +3 Coins';if(coins<targetCoins)moveBtn()};document.getElementById('capNo').onclick=function(){var real=addCoins(-3);w.remove();message.textContent='Falscher Captcha. '+real+' Coins';moveBtn()}}}function shopEvent(){var w=xp('Suspicious Shop','<h3>Shop</h3><p>Coins: '+coins+'</p><button id="buy1">Buy Lucky Coin (-5)</button><button id="buy2">Buy Exit Key (-10)</button><button id="buy3">Buy Nothing (-1)</button>',430);document.getElementById('buy1').onclick=function(){if(coins>=5){addCoins(-5);if(Math.random()<.5)addCoins(12)}w.remove();moveBtn()};document.getElementById('buy2').onclick=function(){if(coins>=10){addCoins(-10);message.textContent='Exit Key is decorative.'}w.remove();moveBtn()};document.getElementById('buy3').onclick=function(){addCoins(-1);w.remove();moveBtn()}}function antivirusEvent(){var w=xp('Antivirus Alert','<h3>Threat detected: Player.exe</h3><p>Risk level: You</p><button id="quar">Quarantine</button><button id="ignore">Ignore</button>',430);document.getElementById('quar').onclick=function(){var real=addCoins(-6);w.remove();message.textContent='You quarantined yourself. '+real+' Coins';moveBtn()};document.getElementById('ignore').onclick=function(){w.remove();message.textContent='Threat ignored. Brave.';moveBtn()}}
+function cloneArmyEvent(){startBtn.classList.add('hidden');var correct=rand(0,11),buttons=[];for(var i=0;i<12;i++){var b=document.createElement('button');b.className='fakeBtn';b.textContent='Start';document.body.appendChild(b);var p=pos(b);b.style.left=p.x+'px';b.style.top=p.y+'px';(function(btn,index){btn.onclick=function(e){e.stopPropagation();buttons.forEach(function(x){x.remove()});startBtn.classList.remove('hidden');if(index===correct){addCoins(6);message.textContent='Richtiger Klon! +6'}else{var real=addCoins(-4);message.textContent='Falscher Klon! '+real}if(coins<targetCoins)moveBtn()}})(b,i);buttons.push(b)}setTimeout(function(){buttons.forEach(function(x){x.remove()});startBtn.classList.remove('hidden');moveBtn()},7000)}function alarmEvent(){var s=screen('<h1 style="color:red">ALARM</h1><p id="alarmCount">3</p>');s.style.background='radial-gradient(circle,rgba(255,0,0,.55),#000)';var n=3,i=setInterval(function(){n--;document.getElementById('alarmCount').textContent=n;if(n<=0){clearInterval(i);s.remove();message.textContent='Alarm vorbei.';moveBtn()}},1000)}function finalBossEvent(){
+  if(bossActive)return;
+  bossActive=true;
+  gameMenu.classList.add('hidden');
+  startBossBg();
+  var bossBg=document.getElementById('bossBg');
+  if(bossBg){bossBg.src='boss-bg.png';bossBg.style.display='block';}
+  var normalBg=document.getElementById('bgGif');
+  if(normalBg)normalBg.style.display='none';
+
+  loading=true;
+  startBtn.classList.add('hidden');
+
+  var arena=document.createElement('div');
+  arena.className='mini';
+  arena.style.background='radial-gradient(circle,rgba(0,0,0,.12),rgba(0,0,0,.72))';
+  arena.innerHTML=
+    '<div class="hud" id="finalHud">FINAL BOSS<br><div id="rpsRound">Runde 1 / 10</div><div>Player Treffer: <span id="playerHP" class="rpsHp"></span></div><div>Boss Treffer: <span id="bossHP" class="rpsHp"></span></div></div>'+ 
+    '<div class="rpsBossSkull">💀</div>'+ 
+    '<div id="rpsCountdown" class="rpsCountdown hidden">3</div>'+ 
+    '<div id="rpsReveal" class="rpsReveal">Wähle deinen Zug.</div>'+ 
+    '<div class="rpsChoices" id="rpsChoices">'+
+      '<button class="rpsBtn rps-scissor" data-choice="scissor">✂️<br>Schere</button>'+ 
+      '<button class="rpsBtn rps-rock" data-choice="rock">🪨<br>Stein</button>'+ 
+      '<button class="rpsBtn rps-paper" data-choice="paper">📄<br>Papier</button>'+
+      (ownedUpgrades['rpsRandom']?'<button class="rpsBtn rps-random" data-choice="random">🎲<br>Random</button>':'')+ 
+    '</div>';
+  document.body.appendChild(arena);
+
+  var round=1;
+  var playerHits=0;
+  var bossHits=0;
+  var locked=false;
+  var flameTimer=setInterval(spawnBossFlame,90);
+  var crackTimer=setInterval(function(){ if(round>=4) spawnCrack(true); },850);
+  var names={scissor:'Schere ✂️',rock:'Stein 🪨',paper:'Papier 📄'};
+  var beats={scissor:'paper',paper:'rock',rock:'scissor'};
+
+  function hpBar(hits){
+    var out='';
+    for(var i=0;i<10;i++) out+=i<hits?'●':'○';
+    return out;
+  }
+
+  function updateHud(){
+    document.getElementById('rpsRound').textContent='Runde '+Math.min(round,10)+' / 10';
+    document.getElementById('playerHP').innerHTML=hpBar(playerHits).replace(/●/g,'<span class="rpsAlive">●</span>');
+    document.getElementById('bossHP').innerHTML=hpBar(bossHits).replace(/●/g,'<span class="rpsHit">●</span>');
+  }
+
+  function bossChoice(){
+    var pool=['scissor','rock','paper'];
+    return pool[rand(0,2)];
+  }
+
+  function result(player,boss){
+    if(player===boss)return 'draw';
+    if(beats[player]===boss)return 'player';
+    return 'boss';
+  }
+
+  function cleanupBoss(){
+    bossActive=false;
+    gameMenu.classList.remove('hidden');
+    clearInterval(flameTimer);
+    clearInterval(crackTimer);
+    document.querySelectorAll('.flameParticle').forEach(function(x){x.remove()});
+    clearBossDestruction();
+    stopBossBg();
+    arena.remove();
+    loading=false;
+    startBtn.classList.remove('hidden');
+  }
+
+  function finishBoss(){
+    cleanupBoss();
+    showEndScreen(playerHits>bossHits);
+  }
+
+  function playRound(choice){
+    if(locked)return;
+    locked=true;
+    var buttons=arena.querySelectorAll('.rpsBtn');
+    buttons.forEach(function(b){b.disabled=true;b.style.opacity='.55'});
+
+    var player=choice==='random'&&ownedUpgrades['rpsRandom']?['scissor','rock','paper'][rand(0,2)]:choice;
+    var boss=bossChoice();
+    var cd=document.getElementById('rpsCountdown');
+    var reveal=document.getElementById('rpsReveal');
+    var count=3;
+    cd.classList.remove('hidden');
+    cd.textContent=count;
+    reveal.innerHTML='Boss bereitet seinen Zug vor...';
+
+    var ticker=setInterval(function(){
+      count--;
+      if(count>0){cd.textContent=count;beep('click');return;}
+      clearInterval(ticker);
+      cd.classList.add('hidden');
+
+      var r=result(player,boss);
+      arena.querySelectorAll('.rpsBtn').forEach(function(b){b.style.outline='none'});
+      var selected=arena.querySelector('[data-choice="'+choice+'"]');
+      if(selected)selected.style.outline='3px solid white';
+      if(r==='player'){
+        playerHits++;
+        reveal.innerHTML='Du: <b>'+names[player]+'</b><br>Boss: <b>'+names[boss]+'</b><br><span style="color:#69ff9a;font-weight:900">TREFFER GEGEN DEN BOSS!</span>';
+        bossHitBg();bossDamageFlash();spawnCrack(true);beep('success');
+      }else if(r==='boss'){
+        bossHits++;
+        reveal.innerHTML='Du: <b>'+names[player]+'</b><br>Boss: <b>'+names[boss]+'</b><br><span style="color:#ff4d4d;font-weight:900">BOSS TRIFFT DICH!</span>';
+        bossDamageFlash();spawnCrack(true);beep('error');
+      }else{
+        reveal.innerHTML='Du: <b>'+names[player]+'</b><br>Boss: <b>'+names[boss]+'</b><br><span style="color:#ffd86b;font-weight:900">UNENTSCHIEDEN</span>';
+        beep('boop');
+      }
+
+      updateHud();
+      round++;
+
+      if(round>10){
+        setTimeout(finishBoss,1200);
+        return;
+      }
+
+      setTimeout(function(){
+        locked=false;
+        buttons.forEach(function(b){b.disabled=false;b.style.opacity='1'});
+        reveal.innerHTML='Wähle deinen nächsten Zug.';
+        updateHud();
+      },1300);
+    },800);
+  }
+
+  arena.querySelectorAll('.rpsBtn').forEach(function(btn){
+    btn.onclick=function(e){
+      e.stopPropagation();
+      playRound(btn.dataset.choice);
+    };
+  });
+
+  updateHud();
+}
+function madnessLevel(){var pct=coins/targetCoins;var base=pct>=.8?4:pct>=.6?3:pct>=.35?2:pct>=.15?1:0;if(difficulty==='easy')base=Math.max(0,base-1);if(difficulty==='hard')base+=1;if(difficulty==='insane')base+=2;return Math.min(base,5)}function eventChance(){var lvl=madnessLevel();var chance={easy:.24,normal:.34,hard:.46,insane:.62}[difficulty]||.34;return Math.min(.82,chance+lvl*.05)}function neededEventClicks(){var lvl=madnessLevel();var base={easy:8,normal:6,hard:5,insane:4}[difficulty]||6;return Math.max(2,base-Math.floor(lvl/2))}function rareChance(){var lvl=madnessLevel();var base={easy:.01,normal:.025,hard:.045,insane:.075}[difficulty]||.025;return Math.min(.16,base+lvl*.015)}
+function jackpotChestEvent(){
+  var chest=document.createElement('button');
+  chest.className='fakeBtn';
+  chest.textContent='🎁';
+  chest.style.fontSize=(46+dropSizeLevel*8)+'px';
+  chest.style.background='linear-gradient(135deg,#ffd86b,#ff3df2,#45d6ff)';
+  chest.style.border='3px solid white';
+  chest.style.boxShadow='0 0 25px gold,0 0 45px rgba(255,0,255,.5)';
+  document.body.appendChild(chest);
+  var p=pos(chest);
+  chest.style.left=p.x+'px';
+  chest.style.top=p.y+'px';
+  message.textContent='🎁 Jackpot-Kiste gespawnt! Öffne sie!';
+
+  chest.onclick=function(e){
+    e.stopPropagation();
+    chest.remove();
+    startJackpotRain();
+  };
+
+  setTimeout(function(){chest.remove()},7000);
+}
+
+function startJackpotRain(){
+  loading=true;
+  startBtn.classList.add('hidden');
+  var flash=document.createElement('div');
+  flash.className='jackpotFlash';
+  document.body.appendChild(flash);
+  message.textContent='🌈 JACKPOT! Sammle die fallenden Coins!';
+  jackpotSound();
+
+  var coinsMade=[];
+  var spawnTimer=setInterval(function(){
+    var c=document.createElement('div');
+    c.className='fallingCoin';c.style.fontSize=(44+dropSizeLevel*8)+'px';
+    c.textContent=Math.random()<.22?'💰':'🪙';
+    c.style.left=rand(60,innerWidth-90)+'px';
+    c.style.top='-60px';
+    c.dataset.value=String(c.textContent==='💰'?rand(3,5):rand(1,3));
+    c.onclick=function(e){
+      e.stopPropagation();
+      var v=parseInt(c.dataset.value,10);
+      c.remove();
+      addCoins(v);
+    };
+    document.body.appendChild(c);
+    coinsMade.push(c);
+    setTimeout(function(){c.remove()},4200);
+  },120);
+
+  setTimeout(function(){
+    clearInterval(spawnTimer);
+    flash.remove();
+    coinsMade.forEach(function(x){x.remove()});
+    loading=false;
+    startBtn.classList.remove('hidden');
+    if(coins<targetCoins)moveBtn();
+  },4000);
+}
+function fakeShutdownEvent(){var s=screen('<h1>Windows wird heruntergefahren...</h1><p id="shutCount">3</p>');var n=3,i=setInterval(function(){n--;document.getElementById('shutCount').textContent=n;if(n<=0){clearInterval(i);s.innerHTML='<h1>Abbruch.</h1><p>Du kommst nicht weg.</p>';setTimeout(function(){s.remove();moveBtn()},900)}},1000)}
+function blueScreenEvent(){loading=true;startBtn.classList.add('hidden');var b=screen('<h1>:(</h1><p>Dein Spiel ist auf ein Problem gestoßen.</p><p>START_MENU_CHAOS_EXCEPTION</p><button class="gameBtn" id="bsodStart">Start</button>');b.style.background='#0078d7';document.getElementById('bsodStart').onclick=function(){b.remove();loading=false;startBtn.classList.remove('hidden');moveBtn()}}
+function deleteSystemEvent(){var w=xp('Deleting System32','<p>Deleting important files...</p><div style="height:20px;background:white;border:1px solid #777"><div id="delbar" style="height:100%;width:0%;background:red"></div></div><p id="delText">0%</p><button id="stopDelete">STOP</button>',440),p=0,stopped=false;var i=setInterval(function(){if(stopped)return;p+=rand(7,16);if(p>100)p=100;document.getElementById('delbar').style.width=p+'%';document.getElementById('delText').textContent=p+'%';if(p>=100){clearInterval(i);var real=addCoins(-8);document.getElementById('delText').textContent='Deleted. '+real+' Coins';setTimeout(function(){w.remove();moveBtn()},1000)}},260);document.getElementById('stopDelete').onclick=function(){stopped=true;clearInterval(i);w.remove();message.textContent='Gerade noch gestoppt.';moveBtn()}}
+function memoryStartEvent(){startBtn.classList.add('hidden');var buttons=[],correct=rand(0,5);message.textContent='Merke dir den blinkenden Start!';for(var i=0;i<6;i++){var b=document.createElement('button');b.className='fakeBtn';b.textContent='Start';document.body.appendChild(b);var p=pos(b);b.style.left=p.x+'px';b.style.top=p.y+'px';if(i===correct){b.style.boxShadow='0 0 25px cyan,0 0 45px white';setTimeout((function(x){return function(){x.style.boxShadow='0 8px 20px rgba(0,0,0,.35)'}})(b),700)}(function(btn,index){btn.onclick=function(e){e.stopPropagation();buttons.forEach(function(x){x.remove()});startBtn.classList.remove('hidden');if(index===correct){addCoins(7);message.textContent='Memory richtig! +7'}else{var real=addCoins(-5);message.textContent='Memory falsch! '+real+' Coins'}if(coins<targetCoins)moveBtn()}})(b,i);buttons.push(b)}setTimeout(function(){buttons.forEach(function(x){x.remove()});startBtn.classList.remove('hidden');moveBtn()},7000)}
+function fakeFreezeEvent(){loading=true;message.textContent='Input eingefroren...';var cover=screen('<h1>...</h1><p>Bitte warten.</p>');cover.style.background='rgba(0,0,0,.78)';setTimeout(function(){cover.remove();loading=false;message.textContent='Alles kommt zurück. Zu schnell.';speedLeft=5;moveBtn()},2000)}
+function mouseChaosEvent(){message.textContent='Maus-Kalibrierung fehlgeschlagen.';var h=function(e){startBtn.style.left=clamp(e.clientX+rand(-220,220),80,innerWidth-280)+'px';startBtn.style.top=clamp(innerHeight-e.clientY+rand(-130,130),80,innerHeight-120)+'px'};document.addEventListener('mousemove',h);setTimeout(function(){document.removeEventListener('mousemove',h);moveBtn()},4000)}
+function megaCoinEvent(){var c=document.createElement('div');c.className='megaCoin';c.textContent='💎';c.style.left=rand(60,innerWidth-100)+'px';c.style.top=rand(80,innerHeight-100)+'px';c.onclick=function(e){e.stopPropagation();c.remove();addCoins(rand(12,20));if(coins<targetCoins)moveBtn()};document.body.appendChild(c);message.textContent='RARE MEGA COIN!';setTimeout(function(){c.remove()},5000)}
+function explodingCoinEvent(){var c=document.createElement('div');c.className='explodingCoin';c.textContent='🪙';c.style.left=rand(60,innerWidth-100)+'px';c.style.top=rand(80,innerHeight-100)+'px';c.onclick=function(e){e.stopPropagation();c.remove();bossDamageFlash();spawnCrack(true);var real=addCoins(-rand(4,9));message.textContent='Exploding Coin! '+real+' Coins';moveBtn()};document.body.appendChild(c);setTimeout(function(){c.remove()},5000)}
+function magnetModeEvent(){message.textContent='Magnet Mode! Coins kommen zu dir... vielleicht.';var made=[];for(var i=0;i<8;i++){setTimeout(function(){var good=Math.random()>.35;var c=document.createElement('div');c.className=good?'coin':'explodingCoin';c.textContent='🪙';c.style.left=rand(40,innerWidth-80)+'px';c.style.top=rand(70,innerHeight-80)+'px';document.body.appendChild(c);made.push(c);setTimeout(function(){c.style.transition='left .65s, top .65s';var r=startBtn.getBoundingClientRect();c.style.left=(r.left+80)+'px';c.style.top=(r.top-10)+'px'},80);c.onclick=function(e){e.stopPropagation();c.remove();if(good)addCoins(rand(1,4));else addCoins(-3)}} ,i*180)}setTimeout(function(){made.forEach(function(x){x.remove()});moveBtn()},2800)}
+function eyesEvent(){message.textContent='Ich sehe deine Maus.';var eyes=[];for(var i=0;i<12;i++){var e=document.createElement('div');e.className='eye';e.textContent='👁️';e.style.left=rand(10,innerWidth-60)+'px';e.style.top=rand(60,innerHeight-80)+'px';document.body.appendChild(e);eyes.push(e)}var h=function(ev){eyes.forEach(function(x,idx){var dx=ev.clientX-parseInt(x.style.left),dy=ev.clientY-parseInt(x.style.top);x.style.transform='rotate('+Math.atan2(dy,dx)+'rad) scale('+(1+idx*.015)+')'})};document.addEventListener('mousemove',h);setTimeout(function(){document.removeEventListener('mousemove',h);eyes.forEach(function(x){x.remove()});moveBtn()},5000)}
+function fakePlayerInputEvent(){message.textContent='Jemand anderes klickt mit...';var bot=setInterval(function(){beep('click');if(Math.random()<.45){eventClicks++;message.textContent='Fake Player clicked Start.'}else addCoins(-1)},650);setTimeout(function(){clearInterval(bot);moveBtn()},4500)}
+function uiBreakEvent(){message.textContent='UI integrity compromised.';stats.classList.add('uiBroken');timer.classList.add('uiBroken');message.classList.add('uiBroken');setTimeout(function(){stats.classList.remove('uiBroken');timer.classList.remove('uiBroken');message.classList.remove('uiBroken');moveBtn()},4000)}
+function fakeChatEvent2(){var w=xp('Unbekannter Chat','<div id="evilChat"><div class="fakeChatLine">Hallo?</div></div>',390),msgs=['Warum klickst du weiter?','Das ist kein Spiel mehr.','Der Start gehört mir.','Du bist kurz vor dem Ende.','Oder auch nicht.'];var i=0,t=setInterval(function(){var box=document.getElementById('evilChat');if(!box){clearInterval(t);return}box.innerHTML+='<div class="fakeChatLine">'+msgs[i++%msgs.length]+'</div>'},650);setTimeout(function(){clearInterval(t);w.remove();moveBtn()},4800)}
+function fakeWinMindfuckEvent(){var s=screen('<h1>YOU WIN!</h1><p>Drücke Start zum Beenden.</p><button class="gameBtn" id="fakeWinBtn">Start</button>');document.getElementById('fakeWinBtn').onclick=function(){s.innerHTML='<h1>Nein.</h1><p>Du bist noch nicht fertig.</p>';setTimeout(function(){s.remove();moveBtn()},1000)}}
+function buttonMultiplyEvent(){startBtn.classList.add('hidden');var buttons=[];var waves=[5,14,28];var wave=0;function spawnWave(){buttons.forEach(function(x){x.remove()});buttons=[];for(var i=0;i<waves[wave];i++){var b=document.createElement('button');b.className='fakeBtn';b.textContent='Start';document.body.appendChild(b);var p=pos(b);b.style.left=p.x+'px';b.style.top=p.y+'px';b.onclick=function(e){e.stopPropagation();var real=addCoins(-1);message.textContent='Zu viele Starts. '+real};buttons.push(b)}wave++;if(wave<waves.length)setTimeout(spawnWave,900);else setTimeout(function(){buttons.forEach(function(x){x.remove()});startBtn.classList.remove('hidden');moveBtn()},1600)}spawnWave()}
+function normalEvent(){
+  var e=[
+    fakeShutdownEvent,
+    blueScreenEvent,
+    deleteSystemEvent,
+    memoryStartEvent,
+    fakeFreezeEvent,
+    mouseChaosEvent,
+    megaCoinEvent,
+    explodingCoinEvent,
+    magnetModeEvent,
+    eyesEvent,
+    fakePlayerInputEvent,
+    uiBreakEvent,
+    fakeChatEvent2,
+    fakeWinMindfuckEvent,
+    buttonMultiplyEvent,
+    jackpotChestEvent,
+    browserEvent,
+    achievementSpamEvent,
+    fakeUpdateEvent,
+    captchaEvent,
+    shopEvent,
+    antivirusEvent,
+    cloneArmyEvent,
+    alarmEvent,
+    fakeLoading,
+    errorWin,
+    fakeBtns,
+    resetMenu,
+    speed,
+    pulse,
+    fakeWin,
+    cursor,
+    rain,
+    fakeCoin,
+    invisible,
+    slot,
+    desktop,
+    mini,
+    simpleWindow,
+    youtube,
+    chat,
+    volume,
+    license,
+    function(){message.textContent=trollMessages[rand(0,trollMessages.length-1)]+' Coins: '+coins+' / '+targetCoins;moveBtn()}
+  ];
+  e[rand(0,e.length-1)]();
+}function rareEvent(){var rares=[function(){message.textContent='RARE: CHAOS STORM';normalEvent();setTimeout(normalEvent,500);setTimeout(normalEvent,1000)},function(){var real=addCoins(20);message.textContent='RARE: JACKPOT GLITCH '+(real>=0?'+':'')+real;if(coins<targetCoins)moveBtn()},function(){var real=addCoins(-15);message.textContent='RARE: TAX COLLECTION '+real;moveBtn()},function(){message.textContent='RARE: BUTTON MULTIVERSE';fakeBtns();setTimeout(fakeBtns,700);setTimeout(moveBtn,1400)},function(){message.textContent='RARE: REALITY BREAK';glitch();setTimeout(zoom,500)}];rares[rand(0,rares.length-1)]()}function chaosEvent(){if(Math.random()<rareChance()){rareEvent();return}var extra=[boss,ghost,glitch,zoom,watch,trapButtonEvent,mirrorEvent,freezeEvent,diceEvent,fakePauseEvent,jackpotChestEvent];var lvl=madnessLevel();var extremeChance=Math.min(.8,.35+lvl*.09);if(Math.random()<extremeChance)extra[rand(0,extra.length-1)]();else normalEvent()}
+function clickStart(){if(loading)return;startTimer();clicks++;vol=Math.min(vol+.01,.28);var ml=madnessLevel();dark=Math.min(dark+.01+(ml*.004),.7);overlay();beep('click');if(ml>=3&&Math.random()<.35){setTimeout(moveBtn,60);beep('error')}if(ml>=4&&Math.random()<.18){document.body.style.filter='contrast(1.35)';setTimeout(function(){document.body.style.filter='none'},180)}upd();if(phase==='menu'){menuClicks++;optionsBtn.classList.add('hidden');creditsBtn.classList.add('hidden');quitBtn.classList.add('hidden');title.textContent='PRESS Start';message.textContent='Okay... nochmal drücken.';if(menuClicks>=4){phase='evil';title.classList.add('hidden');moveBtn();message.textContent='Fang mich. Sammle '+targetCoins+' Coins.'}return}if(phase==='evil'){eventClicks++;coinClicks++;if(coinClicks>=nextCoin){coinClicks=0;nextCoin=rand(5,10);coin(randomCoinValue())}if(speedLeft>0){speedLeft--;moveBtn();setTimeout(moveBtn,90);setTimeout(moveBtn,180);return}if(eventClicks>=neededEventClicks()&&Math.random()<eventChance()){eventClicks=0;chaosEvent()}else{message.textContent='Coins: '+coins+' / '+targetCoins;moveBtn()}}}
+function manualUnstuck(){
+  if(mainMenu && !mainMenu.classList.contains('hidden')) return;
+  if(buttonLocked) return;
+  if(document.querySelector('.screen,.mini,.xp,.xpDesktop')) return;
+  loading=false;
+  startBtn.classList.remove('hidden');
+  startBtn.style.display='block';
+  startBtn.style.visibility='visible';
+  startBtn.style.opacity='1';
+  message.textContent='Unstuck genutzt.';
+  moveBtn();
+}
+document.getElementById('unstuckBtn').onclick=manualUnstuck;
+loadMeta();applySkins();refreshMenuStats();document.getElementById('refreshStatsBtn').onclick=refreshMenuStats;document.getElementById('freePlayToggle').onchange=refreshMenuStats;document.querySelectorAll('.shopTab').forEach(function(b){b.onclick=function(){setShopTab(b.dataset.tab)}});document.getElementById('playBtn').onclick=function(){begin('solo')};document.getElementById('bossArenaBtn').onclick=function(){
+  if(!bossArenaUnlocked && !freePlay){
+    if(metaCoins>=50){
+      metaCoins-=50;
+      bossArenaUnlocked=true;
+      saveMeta();
+      refreshMenuStats();
+      menuInfo.textContent='Boss Arena freigeschaltet!';
+    }else{
+      menuInfo.textContent='Boss Arena kostet 50 Chaos Coins.';
+      return;
+    }
+  }
+  mainMenu.classList.add('hidden');
+  reset();
+  coins=targetCoins;
+  finalBossDone=false;
+  bossActive=false;
+  document.getElementById('bgGif').style.display='block';
+  document.getElementById('gameBgDim').style.display='block';
+  bossArenaMode=true;
+  message.textContent='Boss Arena gestartet.';
+  musicOn();
+  finalBossEvent();
+};document.getElementById('resetScoresBtn').onclick=function(){
+  var confirmBox=screen('<h1>Fortschritt löschen?</h1><p>Dadurch werden alle Zeiten, Chaos Coins, gekaufte Skins, Runs, Difficulties und Upgrades gelöscht.</p><p>Das kann nicht rückgängig gemacht werden.</p><button class="gameBtn" id="confirmReset">Ja, alles löschen</button><button class="gameBtn" id="cancelReset">Abbrechen</button>');
+  document.getElementById('cancelReset').onclick=function(){confirmBox.remove()};
+  document.getElementById('confirmReset').onclick=function(){
+    localStorage.removeItem('smc_scores');
+    localStorage.removeItem('smc_metaCoins');
+    localStorage.removeItem('smc_ownedSkins');
+    localStorage.removeItem('smc_activeButtonSkin');
+    localStorage.removeItem('smc_activeCoinSkin');
+    localStorage.removeItem('smc_unlockedTargets');
+    localStorage.removeItem('smc_unlockedDiffs');
+    localStorage.removeItem('smc_ownedUpgrades');
+    localStorage.removeItem('smc_dropSizeLevel');
+    localStorage.removeItem('smc_rapidFireLevel');
+    localStorage.removeItem('smc_playerSpeedLevel');
+    confirmBox.remove();
+    loadMeta();
+    applySkins();
+    refreshMenuStats();
+    menuInfo.textContent='Gesamter Fortschritt gelöscht.';
+  };
+};
+
+document.getElementById('testBossBtn').onclick=function(){
+  mainMenu.classList.add('hidden');
+  reset();
+  coins=targetCoins; // direkt genug Coins
+  finalBossDone=false;
+  bossActive=false;
+  document.getElementById('bgGif').style.display='block';
+  document.getElementById('gameBgDim').style.display='block';
+  message.textContent='Test Bossfight gestartet.';
+  musicOn();
+  finalBossEvent();
+};startBtn.onclick=clickStart;optionsBtn.onclick=function(){music=!music;if(music)musicOn();else musicOff();message.textContent='Music: '+(music?'AN':'AUS')};creditsBtn.onclick=function(){message.textContent='Start Menu Chaos · by dir und Karel 😄'};quitBtn.onclick=function(){mainMenu.classList.remove('hidden');loadMeta();document.getElementById('bgGif').style.display='none';document.getElementById('gameBgDim').style.display='none';musicOff();reset()};upd();
+
+// Anti-Softlock-System: greift nur, wenn START wirklich unsichtbar oder außerhalb ist.
+setInterval(function(){
+  if(mainMenu && !mainMenu.classList.contains('hidden')) return;
+  if(phase!=='evil') return;
+  if(coins>=targetCoins) return;
+  if(document.querySelector('.screen,.mini,.xp,.xpDesktop')) return;
+
+  var rect=startBtn.getBoundingClientRect();
+  var invisible=startBtn.classList.contains('hidden') || startBtn.style.display==='none' || startBtn.style.visibility==='hidden';
+  var offscreen=rect.right<10 || rect.bottom<10 || rect.left>window.innerWidth-10 || rect.top>window.innerHeight-10;
+
+  if(invisible || offscreen){
+    loading=false;
+    startBtn.classList.remove('hidden');
+    startBtn.style.display='block';
+    startBtn.style.visibility='visible';
+    startBtn.style.opacity='1';
+    message.textContent='Anti-Softlock: Start zurück im Fenster.';
+    moveBtn();
+  }
+},1200);
+
+window.addEventListener('resize',function(){if(phase==='evil')moveBtn()});
+})();
+</script>
+</body>
+</html>
